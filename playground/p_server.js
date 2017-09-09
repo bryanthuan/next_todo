@@ -7,46 +7,72 @@ const router = new Router();
 
 // Construct a schema, using GraphQL schema language
 var schema = buildSchema(`
-type RandomDie {
-  numSides: Int!
-  numRolls: Int!
-  rollOnce: Int
-  roll: [Int]
+input MessageInput {
+  content: String
+  author: String
+}
+
+type Message {
+  id: ID!
+  content: String
+  author: String
 }
 
 type Query {
-  getDie(numSides: Int, numRolls: Int): RandomDie
+  getMessage(id: ID!): Message
+}
+
+type Mutation {
+  createMessage(input: MessageInput): Message
+  updateMessage(id: ID!, input: MessageInput): Message
 }
 `);
 
-// This class implements the RandomDie GraphQL type
-class RandomDie {
-  constructor(numSides, numRolls) {
-    this.numSides = numSides;
-    this.numRolls = numRolls;
-  }
-
-  rollOnce() {
-    return 1 + Math.floor(Math.random() * this.numSides);
-  }
-
-  roll() {
-    var output = [];
-    for (var i = 0; i < this.numRolls; i++) {
-      output.push(this.rollOnce());
-    }
-    return output;
-  }
-}
-
 // The root provides the top-level API endpoints
-var root = {
-  getDie: function ({numSides, numRolls}) {
-    return new RandomDie(numSides || 6, numRolls || 4);
+// If Message had any complex fields, we'd put them on this object.
+class Message {
+  constructor(id, {content, author}) {
+    this.id = id;
+    this.content = content;
+    this.author = author;
   }
 }
+
+// Maps username to content
+var fakeDatabase = {};
+
+var root = {
+  getMessage: function ({id}) {
+    if (!fakeDatabase[id]) {
+      throw new Error('no message exists with id ' + id);
+    }
+    return new Message(id, fakeDatabase[id]);
+  },
+  createMessage: function ({input}) {
+    // Create a random id for our "database".
+    var id = require('crypto').randomBytes(10).toString('hex');
+
+    fakeDatabase[id] = input;
+    return new Message(id, input);
+  },
+  updateMessage: function ({id, input}) {
+    if (!fakeDatabase[id]) {
+      throw new Error('no message exists with id ' + id);
+    }
+    // This replaces all old data, but some apps might want partial update.
+    fakeDatabase[id] = input;
+    return new Message(id, input);
+  },
+};
 
 router.all('/graphql', graphqlHTTP({schema: schema, rootValue: root, graphiql: true}));
+
+app.use(async (ctx, next) => {
+  const start = Date.now();
+  await next();
+  const ms = Date.now() - start;
+  console.log(`${ctx.method} ${ctx.url} - ${ms}ms`);
+});
 
 app
   .use(router.routes())

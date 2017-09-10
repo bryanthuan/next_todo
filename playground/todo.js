@@ -4,33 +4,22 @@ const graphqlHTTP = require('koa-graphql');
 const graphql = require('graphql');
 const app = new Koa();
 const router = new Router();
+const axios = require('axios');
 
-const {GraphQLObjectType, GraphQLString, GraphQLID, GraphQLInt, GraphQLBoolean} = graphql;
+const { 
+    GraphQLObjectType, 
+    GraphQLString, 
+    GraphQLID, 
+    GraphQLInt, 
+    GraphQLBoolean,
+    GraphQLNonNull
+} = graphql;
 
-// add some sample data:
-var TODOs = [
-    {
-        "id": 1446412739542,
-        "text": "Read emails",
-        "dismissed": false,
-        "createdAt": 1505012677438,
-        "updatedAt": null
-    }, {
-        "id": 1305012049594,
-        "text": "Buy orange",
-        "dismissed": true,
-        "createdAt": 1505012736931,
-        "updatedAt": 1505012749594
-
-    }, {
-        "id": 1505012928371,
-        "text": "Meeting with CTO",
-        "dismissed": false,
-        "createdAt": 1505012928371,
-        "updatedAt": null
-
-    }
-];
+const {
+    GraphQLDate,
+    GraphQLTime,
+    GraphQLDateTime
+  } = require('graphql-iso-date');
 
 const TodoType = new GraphQLObjectType({
     name: 'Todo',
@@ -45,10 +34,10 @@ const TodoType = new GraphQLObjectType({
             type: GraphQLBoolean
         },
         createdAt: {
-            type: GraphQLInt
+            type: GraphQLDateTime
         },
         updatedAt: {
-            type: GraphQLInt
+            type: GraphQLDateTime
         }
     }
 
@@ -60,13 +49,40 @@ const RootQuery = new GraphQLObjectType({
         todos: {
             type: new graphql.GraphQLList(TodoType),
             resolve() {
-                return TODOs;
+                return axios.get('http://localhost:3000/todos')
+                .then(res=> res.data);
             }
         }
     }
 });
 
-var schema = new graphql.GraphQLSchema({query: RootQuery});
+const mutation = new GraphQLObjectType({
+    name: 'Mutation',
+    fields: {
+        addTodo: {
+            type: TodoType,
+            description: 'Add a Todo',
+            args: {
+              text: {
+                name: 'Todo title',
+                type: new GraphQLNonNull(GraphQLString)
+              }
+            },
+            resolve: (parentValue, {text}) => {
+              var newTodo = {
+                text,
+                dismissed: false,
+                createdAt: new Date()
+              };              
+              return axios.post('http://localhost:3000/todos', newTodo)
+                .then(res => res.data);
+            }
+        }
+    }
+});
+
+
+var schema = new graphql.GraphQLSchema({query: RootQuery, mutation});
 
 router.get('/', async(ctx, next) => {
     console.log('ip:', ctx.request.ip);

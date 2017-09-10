@@ -73,6 +73,10 @@ app.use(async (ctx, next) => {
   const ms = Date.now() - start;
   console.log(`${ctx.method} ${ctx.url} - ${ms}ms`);
 });
+app.use(async (ctx, next) => {
+  await next();
+  console.log('ip:', ctx.request.ip);
+});
 
 app
   .use(router.routes())

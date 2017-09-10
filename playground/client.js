@@ -1,3 +1,6 @@
+// Copy this and paste in to browser developer tool console.
+// Depend on the query and data types 🙂
+
 var xhr = new XMLHttpRequest();
 xhr.responseType = 'json';
 xhr.open("POST", "/graphql");

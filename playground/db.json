@@ -1,0 +1,25 @@
+{
+   "todos": [
+      {
+         "id": 1446412739542,
+         "text": "Read emails",
+         "dismissed": false,
+         "createdAt": 1505012677438,
+         "updatedAt": null
+      },
+      {
+         "id": 1305012049594,
+         "text": "Buy orange",
+         "dismissed": true,
+         "createdAt": 1505012736931,
+         "updatedAt": 1505012749594
+      },
+      {
+         "id": 1505012928371,
+         "text": "Meeting with CTO",
+         "dismissed": false,
+         "createdAt": 1505012928371,
+         "updatedAt": null
+      }
+   ]
+}
